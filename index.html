@@ -49,6 +49,22 @@
 
     document.getElementById('app').src = APP + '?sat=' + top + '&sab=' + bottom;
   })();
+
+  // Guarda o login do álbum aqui, porque o iPhone apaga a memória do iframe ao fechar o app.
+  // Só conversa com o álbum (endereços *.googleusercontent.com do Google Apps Script).
+  window.addEventListener('message', function (e) {
+    if (!/^https:\/\/[a-z0-9-]+-script\.googleusercontent\.com$/.test(e.origin) || !e.data) return;
+    var KEY = 'nm_auth';
+    try {
+      if (e.data.nm === 'getAuth') {
+        var saved = localStorage.getItem(KEY);
+        e.source.postMessage({ nm: 'auth', auth: saved ? JSON.parse(saved) : null }, e.origin);
+      } else if (e.data.nm === 'setAuth') {
+        if (e.data.auth && e.data.auth.user) localStorage.setItem(KEY, JSON.stringify(e.data.auth));
+        else localStorage.removeItem(KEY);
+      }
+    } catch (err) {}
+  });
 </script>
 </body>
 </html>
