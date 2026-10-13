@@ -20,10 +20,12 @@
   /* o álbum fica só na área segura da tela, sem entrar embaixo do relógio nem da barra de gestos */
   iframe {
     position: fixed; display: block; border: 0;
-    top: env(safe-area-inset-top); bottom: env(safe-area-inset-bottom);
+    --t: max(env(safe-area-inset-top), var(--top, 0px));
+    --b: max(env(safe-area-inset-bottom), var(--bottom, 0px));
+    top: var(--t); bottom: var(--b);
     left: env(safe-area-inset-left); right: env(safe-area-inset-right);
     width: calc(100% - env(safe-area-inset-left) - env(safe-area-inset-right));
-    height: calc(100% - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    height: calc(100% - var(--t) - var(--b));
   }
 </style>
 </head>
@@ -32,5 +34,21 @@
 <iframe src="https://script.google.com/macros/s/AKfycbzkK7yRx_pTE1kDqLAFL0Jhb5qNO3q_4qMVSxHDIIkaHgMvfQgZHahi-c6qWzWRNgyg/exec"
         allow="autoplay; fullscreen; clipboard-write; encrypted-media; picture-in-picture"
         title="Nossos Momentos"></iframe>
+<script>
+  // se o iPhone (modo app) não informar a área da ilha/relógio, usa uma margem segura fixa
+  (function () {
+    var probe = document.createElement('div');
+    probe.style.cssText = 'position:fixed;top:0;left:0;width:1px;visibility:hidden;height:env(safe-area-inset-top)';
+    document.body.appendChild(probe);
+    var measured = probe.offsetHeight;
+    probe.remove();
+    var standalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+    var iphone = /iPhone/.test(navigator.userAgent);
+    if (standalone && iphone && measured < 20) {
+      document.documentElement.style.setProperty('--top', '62px');
+      document.documentElement.style.setProperty('--bottom', '30px');
+    }
+  })();
+</script>
 </body>
 </html>
