@@ -13,41 +13,41 @@
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="manifest" href="manifest.webmanifest">
 <style>
-  /* topo vinho (atrás do relógio/bateria), embaixo a cor de fundo do álbum (atrás da barra de gestos) */
-  html, body { margin: 0; height: 100%; overflow: hidden; background: #f8f0ee; }
-  body::before { content: ''; position: fixed; left: 0; right: 0; top: 0; height: 50%; background: #6b1525; }
-  @media (prefers-color-scheme: dark) { html, body { background: #170a0d; } }
-  /* o álbum fica só na área segura da tela, sem entrar embaixo do relógio nem da barra de gestos */
-  iframe {
-    position: fixed; display: block; border: 0;
-    --t: max(env(safe-area-inset-top), var(--top, 0px));
-    --b: max(env(safe-area-inset-bottom), var(--bottom, 0px));
-    top: var(--t); bottom: var(--b);
-    left: env(safe-area-inset-left); right: env(safe-area-inset-right);
-    width: calc(100% - env(safe-area-inset-left) - env(safe-area-inset-right));
-    height: calc(100% - var(--t) - var(--b));
-  }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #6b1525; }
+  /* o álbum ocupa a tela toda; ele mesmo se afasta da ilha/notch com as medidas enviadas abaixo */
+  iframe { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; display: block; }
 </style>
 </head>
 <body>
 <!-- o álbum mora no Google Apps Script; esta página só dá o ícone e o nome na tela inicial -->
-<iframe src="https://script.google.com/macros/s/AKfycbzkK7yRx_pTE1kDqLAFL0Jhb5qNO3q_4qMVSxHDIIkaHgMvfQgZHahi-c6qWzWRNgyg/exec"
-        allow="autoplay; fullscreen; clipboard-write; encrypted-media; picture-in-picture"
-        title="Nossos Momentos"></iframe>
+<iframe id="app" allow="autoplay; fullscreen; clipboard-write; encrypted-media; picture-in-picture" title="Nossos Momentos"></iframe>
 <script>
-  // se o iPhone (modo app) não informar a área da ilha/relógio, usa uma margem segura fixa
+  // Dentro do iframe o iPhone não informa onde ficam a ilha/notch e a barra de gestos,
+  // então medimos aqui (vale para qualquer modelo) e mandamos para o álbum.
   (function () {
-    var probe = document.createElement('div');
-    probe.style.cssText = 'position:fixed;top:0;left:0;width:1px;visibility:hidden;height:env(safe-area-inset-top)';
-    document.body.appendChild(probe);
-    var measured = probe.offsetHeight;
-    probe.remove();
-    var standalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
-    var iphone = /iPhone/.test(navigator.userAgent);
-    if (standalone && iphone && measured < 20) {
-      document.documentElement.style.setProperty('--top', '62px');
-      document.documentElement.style.setProperty('--bottom', '30px');
+    var APP = 'https://script.google.com/macros/s/AKfycbzkK7yRx_pTE1kDqLAFL0Jhb5qNO3q_4qMVSxHDIIkaHgMvfQgZHahi-c6qWzWRNgyg/exec';
+
+    function measure(side) {
+      var d = document.createElement('div');
+      d.style.cssText = 'position:fixed;left:0;top:0;width:1px;visibility:hidden;height:env(safe-area-inset-' + side + ')';
+      document.body.appendChild(d);
+      var h = d.offsetHeight;
+      d.remove();
+      return h;
     }
+
+    var top = measure('top'), bottom = measure('bottom');
+    var standalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+
+    // reserva: se o aparelho não informar, usa as medidas conhecidas pelo tamanho da tela
+    if (standalone && /iPhone/.test(navigator.userAgent) && top < 20) {
+      var h = Math.max(screen.width, screen.height);
+      var island = [852, 874, 932, 956].indexOf(h) >= 0;   // iPhones com Dynamic Island
+      top = island ? (h >= 932 ? 62 : 59) : (h >= 812 ? 47 : 20);
+      bottom = h >= 812 ? 34 : 0;
+    }
+
+    document.getElementById('app').src = APP + '?sat=' + top + '&sab=' + bottom;
   })();
 </script>
 </body>
