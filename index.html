@@ -56,6 +56,7 @@
     if (!/^https:\/\/[a-z0-9-]+-script\.googleusercontent\.com$/.test(e.origin) || !e.data) return;
     var KEY = 'nm_auth';
     try {
+      if (e.data.nm === 'reload') { location.reload(); return; }   // o álbum avisou que tem versão nova
       if (e.data.nm === 'getAuth') {
         var saved = localStorage.getItem(KEY);
         e.source.postMessage({ nm: 'auth', auth: saved ? JSON.parse(saved) : null }, e.origin);
